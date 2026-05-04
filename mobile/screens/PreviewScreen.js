@@ -30,7 +30,7 @@ export default function PreviewScreen({ navigation, route }) {
         />
       </View>
 
-      <Text style={styles.readyText}>ready for analysis · 3 models available</Text>
+      <Text style={styles.readyText}>ready for analysis</Text>
 
       <View style={styles.btnRow}>
         <TouchableOpacity style={styles.btnSecondary} onPress={handleRetake}>

@@ -1,3 +1,31 @@
 .venv
 .qodo
 .vscode
+
+**/__pycache__/
+
+node_modules/
+
+# Large model files - do NOT commit (too large for GitHub)
+# Store externally: Google Drive, HuggingFace, etc.
+*.h5
+*.h5.zip
+*.pkl
+*.pt
+*.pth
+
+# Jupyter checkpoints
+**/.ipynb_checkpoints/
+
+# Environment files (contain secrets)
+.env
+backend/.env
+
+# Python
+*.pyc
+*.pyo
+__pycache__/
+
+# OS
+.DS_Store
+Thumbs.db

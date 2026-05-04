@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, Image, ActivityIndicator,
+  ScrollView, Image,
 } from 'react-native';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
-import { MODEL_LIST } from '../constants/models';
+import { MODEL_LIST, PRIMARY_MODEL } from '../constants/models';
 import { predictBloodGroup } from '../services/api';
-import { getConsensus } from '../utils/consensus';
+import ResNetHeroCard from '../components/ResNetHeroCard';
 import ModelCard from '../components/ModelCard';
-import ConsensusBanner from '../components/ConsensusBanner';
 
 export default function ResultScreen({ navigation, route }) {
   const { imageUri } = route.params;
@@ -29,19 +28,21 @@ export default function ResultScreen({ navigation, route }) {
     })();
   }, []);
 
-  const handleScanAgain = () => {
-    navigation.popToTop();
-  };
+  const handleScanAgain = () => navigation.popToTop();
 
+  // ── Loading ─────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.loadingLabel}>ANALYSING_</Text>
-        <Text style={styles.loadingSubtext}>running 3 models in parallel</Text>
+        <Text style={styles.loadingSubtext}>
+          running {MODEL_LIST.length} models in parallel
+        </Text>
       </View>
     );
   }
 
+  // ── Error ───────────────────────────────────────────────────────────────────
   if (error) {
     return (
       <View style={styles.centerContainer}>
@@ -54,15 +55,22 @@ export default function ResultScreen({ navigation, route }) {
     );
   }
 
-  const consensus = getConsensus(results);
+  // Build a lookup map: model key → result object
   const resultMap = {};
   results.forEach((r) => { resultMap[r.model] = r; });
 
+  const primaryResult = resultMap[PRIMARY_MODEL.key];
+
+  // Secondary models: everything except the primary
+  const secondaryModels = MODEL_LIST.filter((m) => !m.primary);
+
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerLabel}>ANALYSIS COMPLETE</Text>
+
+      {/* ── Page header ─────────────────────────────────────────────────── */}
+      <View style={styles.pageHeader}>
+        <Text style={styles.pageHeaderLabel}>ANALYSIS COMPLETE</Text>
         <Image
           source={{ uri: imageUri }}
           style={styles.thumbnail}
@@ -71,29 +79,39 @@ export default function ResultScreen({ navigation, route }) {
       </View>
       <View style={styles.divider} />
 
-      {/* Consensus banner */}
-      <ConsensusBanner consensus={consensus} />
+      {/* ── ResNet hero result ──────────────────────────────────────────── */}
+      <ResNetHeroCard
+        result={primaryResult}
+        accuracy={PRIMARY_MODEL.accuracy}
+      />
 
-      {/* Model cards */}
-      {MODEL_LIST.map((m) => {
+      {/* ── Research models section ─────────────────────────────────────── */}
+      <View style={styles.researchHeader}>
+        <Text style={styles.researchTitle}>RESEARCH MODELS</Text>
+        <Text style={styles.researchSub}>
+          Supporting models shown for demonstration &amp; comparison purposes.
+          Accuracy values reflect training results.
+        </Text>
+      </View>
+
+      {secondaryModels.map((m) => {
         const result = resultMap[m.key];
-        const agrees =
-          result?.available &&
-          consensus.label !== 'NO CONSENSUS' &&
-          consensus.label !== 'NO MODELS' &&
-          result.predicted_class === consensus.label;
-
         return (
           <ModelCard
             key={m.key}
             modelLabel={m.label}
             result={result}
-            agreesWithConsensus={agrees}
+            accuracy={m.accuracy}
+            agreesWithConsensus={
+              result?.available &&
+              primaryResult?.available &&
+              result.predicted_class === primaryResult.predicted_class
+            }
           />
         );
       })}
 
-      {/* Scan again */}
+      {/* ── Scan again ──────────────────────────────────────────────────── */}
       <TouchableOpacity style={styles.btnPrimary} onPress={handleScanAgain}>
         <Text style={styles.btnPrimaryText}>SCAN AGAIN</Text>
       </TouchableOpacity>
@@ -108,6 +126,8 @@ const styles = StyleSheet.create({
     paddingTop: 52,
     paddingBottom: SPACING.xl,
   },
+
+  // ── Loading / Error centred screens ───────────────────────────────────────
   centerContainer: {
     flex: 1,
     backgroundColor: COLORS.white,
@@ -143,13 +163,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: SPACING.xl,
   },
-  header: {
+
+  // ── Page header ───────────────────────────────────────────────────────────
+  pageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: SPACING.sm,
   },
-  headerLabel: {
+  pageHeaderLabel: {
     fontFamily: FONTS.mono,
     fontSize: 10,
     color: COLORS.grey,
@@ -166,6 +188,31 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.black,
     marginBottom: SPACING.md,
   },
+
+  // ── Research models section header ────────────────────────────────────────
+  researchHeader: {
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.sm,
+    paddingTop: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.dimBorder,
+  },
+  researchTitle: {
+    fontFamily: FONTS.mono,
+    fontSize: 9,
+    color: COLORS.grey,
+    letterSpacing: 4,
+    marginBottom: SPACING.xs,
+  },
+  researchSub: {
+    fontFamily: FONTS.mono,
+    fontSize: 9,
+    color: COLORS.dimText,
+    letterSpacing: 0.5,
+    lineHeight: 14,
+  },
+
+  // ── Scan again button ─────────────────────────────────────────────────────
   btnPrimary: {
     backgroundColor: COLORS.black,
     paddingVertical: SPACING.md,

@@ -5,6 +5,13 @@ export const COLORS = {
   grey:      '#888888',
   lightGrey: '#F0F0F0',
   border:    '#000000',
+  // ResNet hero accent
+  accent:    '#0A0A0A',
+  accentBg:  '#0F0F0F',
+  // Secondary / research model muted palette
+  dimText:   '#AAAAAA',
+  dimBorder: '#CCCCCC',
+  dimBg:     '#F8F8F8',
 };
 
 export const FONTS = {
